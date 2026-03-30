@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Defense Tech Association — UNC Kenan-Flagler MBA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #060810;
+    --dim: rgba(255,255,255,0.35);
+    --dimmer: rgba(255,255,255,0.18);
+    --dimmest: rgba(255,255,255,0.08);
+    --blue-tint: #5b8fbf;
+    --red-tint: #c07050;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: #fff;
+    font-family: var(--mono);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .hex-logo { width: 32px; height: 32px; position: relative; }
+  .hex-logo svg { width: 100%; height: 100%; }
+
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dimmer);
+  }
+
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--dim); }
+
+  .main-content {
+    flex: 1;
+    display: flex;
+    position: relative;
+    padding: 0 40px;
+    align-items: center;
+  }
+
+  #bgCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .text-block {
+    position: relative;
+    z-index: 10;
+    max-width: 420px;
+    padding: 40px 0;
+  }
+
+  .tag-line {
+    font-size: 9px;
+    letter-spacing: 3.5px;
+    color: var(--dimmer);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    font-weight: 400;
+  }
+
+  .headline {
+    font-family: var(--display);
+    font-weight: 300;
+    line-height: 1.05;
+    margin-bottom: 24px;
+  }
+
+  .headline .future {
+    font-size: 46px;
+    color: rgba(255,255,255,0.4);
+    display: block;
+  }
+
+  .headline .defense-tech {
+    font-size: 58px;
+    display: block;
+  }
+
+  .headline .defense { color: var(--blue-tint); }
+  .headline .tech { color: var(--red-tint); }
+
+  .subtext {
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--dimmer);
+    margin-bottom: 36px;
+    max-width: 380px;
+    font-weight: 300;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .btn {
+    position: relative;
+    padding: 12px 24px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--dim);
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn::before, .btn::after,
+  .btn .corner-br::before, .btn .corner-br::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: rgba(255,255,255,0.25);
+    border-style: solid;
+  }
+
+  .btn::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
+  .btn::after { top: 0; right: 0; border-width: 1px 1px 0 0; }
+  .btn .corner-br::before { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+  .btn .corner-br::after { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+
+  .btn-ghost { border: 1px solid rgba(255,255,255,0.12); }
+  .btn-ghost::before, .btn-ghost::after,
+  .btn-ghost .corner-br::before, .btn-ghost .corner-br::after {
+    border-color: rgba(255,255,255,0.35);
+  }
+
+  .btn-fill {
+    background: linear-gradient(135deg, rgba(91,143,191,0.25), rgba(192,112,80,0.25));
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .btn-fill::before, .btn-fill::after,
+  .btn-fill .corner-br::before, .btn-fill .corner-br::after {
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .btn:hover { color: rgba(255,255,255,0.7); }
+
+  .bottom-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 40px 30px;
+  }
+
+  .join-line {
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dimmer);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .contact-line {
+    text-align: center;
+    font-size: 10px;
+    color: var(--dimmest);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .stat-cell {
+    position: relative;
+    padding: 20px 24px;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-cell::before, .stat-cell::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-color: rgba(255,255,255,0.15);
+    border-style: solid;
+  }
+
+  .stat-cell::before { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+  .stat-cell::after { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+
+  .stat-cell .corner-b::before, .stat-cell .corner-b::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-color: rgba(255,255,255,0.15);
+    border-style: solid;
+  }
+
+  .stat-cell .corner-b::before { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; }
+  .stat-cell .corner-b::after { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+
+  .stat-value {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 8px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--dimmest);
+  }
+
+  @media (max-width: 768px) {
+    .main-content { padding: 0 20px; }
+    .top-bar { padding: 16px 20px; }
+    .bottom-section { padding: 0 20px 20px; }
+    .headline .future { font-size: 32px; }
+    .headline .defense-tech { font-size: 42px; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .stat-cell:nth-child(2) { border-right: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<header class="top-bar">
+  <div class="hex-logo">
+    <svg viewBox="0 0 40 46" fill="none">
+      <path d="M20 1 L37 11 L37 34 L20 44 L3 34 L3 11 Z" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none"/>
+      <path d="M20 8 L30 14 L30 30 L20 36 L10 30 L10 14 Z" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/>
+      <text x="20" y="27" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-family="JetBrains Mono" font-size="11" font-weight="500">DT</text>
+    </svg>
+  </div>
+  <nav class="nav-links">
+    <a href="#">//Home</a>
+    <a href="#">//About</a>
+    <a href="#">//Events</a>
+    <a href="#">//Join</a>
+  </nav>
+</header>
+
+<main class="main-content">
+  <div class="text-block">
+    <p class="tag-line">//Defense Tech Association · UNC Kenan-Flagler MBA</p>
+    <h1 class="headline">
+      <span class="future">The Future of</span>
+      <span class="defense-tech"><span class="defense">Defense </span><span class="tech">Tech</span></span>
+    </h1>
+    <p class="subtext">Industry leaders, startup founders, and recruiters building the next generation of national security technology.</p>
+    <div class="btn-group">
+      <a href="#" class="btn btn-ghost">Join the Club<span class="corner-br"></span></a>
+      <a href="#" class="btn btn-fill">Explore Events<span class="corner-br"></span></a>
+    </div>
+  </div>
+</main>
+
+<footer class="bottom-section">
+  <p class="join-line">//Join the Founding Class — Open to All MBA Students</p>
+  <p class="contact-line">[Your Name] · [your_email@kenan-flagler.unc.edu]</p>
+  <div class="stats-bar">
+    <div class="stat-cell">
+      <div class="stat-value">10+</div>
+      <div class="stat-label">Industry Speakers</div>
+      <span class="corner-b"></span>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">DC</div>
+      <div class="stat-label">Company Treks</div>
+      <span class="corner-b"></span>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">50+</div>
+      <div class="stat-label">Defense Tech Companies</div>
+      <span class="corner-b"></span>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-value">1:1</div>
+      <div class="stat-label">Recruiter Access</div>
+      <span class="corner-b"></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+function thermalColor(t, alpha) {
+  let r, g, b;
+  if (t < 0.2) {
+    const s = t / 0.2;
+    r = 10 + s * 20;
+    g = 30 + s * 180;
+    b = 180 + s * 75;
+  } else if (t < 0.45) {
+    const s = (t - 0.2) / 0.25;
+    r = 30 + s * 225;
+    g = 210 + s * 45;
+    b = 255;
+  } else if (t < 0.65) {
+    const s = (t - 0.45) / 0.2;
+    r = 255;
+    g = 255 - s * 130;
+    b = 255 - s * 220;
+  } else {
+    const s = (t - 0.65) / 0.35;
+    r = 255 - s * 50;
+    g = 125 - s * 95;
+    b = 35 - s * 25;
+  }
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${alpha})`;
+}
+
+class ParticleJet {
+  constructor() {
+    this.particles = [];
+    this.annotations = [];
+    this.generate();
+  }
+
+  generate() {
+    this.particles = [];
+    const cx = W * 0.62;
+    const cy = H * 0.45;
+    const scale = Math.min(W, H) * 0.0038;
+    const angle = -0.42;
+
+    const rot = (x, y) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return [x * cos - y * sin + cx, x * sin + y * cos + cy];
+    };
+
+    const addParticle = (lx, ly, tHeat, sizeBase) => {
+      const [px, py] = rot(lx * scale, ly * scale);
+      const pulse = Math.random() * Math.PI * 2;
+      const size = (sizeBase || (0.6 + Math.random() * 1.2));
+      this.particles.push({
+        x: px, y: py, baseX: px, baseY: py,
+        t: tHeat, size: size,
+        pulse: pulse,
+        pulseSpeed: 0.3 + Math.random() * 0.8,
+        driftX: (Math.random() - 0.5) * 0.4,
+        driftY: (Math.random() - 0.5) * 0.4,
+      });
+    };
+
+    // FUSELAGE
+    for (let i = 0; i < 1400; i++) {
+      const lx = (Math.random() - 0.3) * 180;
+      const fw = lx < -40 ? 4 + (lx + 54) * 0.3 :
+                 lx < 0   ? 8 - Math.abs(lx) * 0.1 :
+                 lx < 60  ? 8 + lx * 0.05 :
+                 lx < 100 ? 11 - (lx - 60) * 0.08 :
+                            8 - (lx - 100) * 0.2;
+      const ly = (Math.random() - 0.5) * 2 * Math.max(1, fw);
+      if (Math.abs(ly) > fw) continue;
+      addParticle(lx, ly, Math.max(0, Math.min(1, (lx + 54) / 180)));
+    }
+
+    // NOSE CONE
+    for (let i = 0; i < 350; i++) {
+      const lx = 100 + Math.random() * 40;
+      const taper = Math.max(0, 1 - (lx - 100) / 40);
+      const maxW = 6 * taper;
+      const ly = (Math.random() - 0.5) * 2 * maxW;
+      if (Math.abs(ly) > maxW) continue;
+      addParticle(lx, ly, 0.85 + (lx - 100) / 40 * 0.15, 0.5 + Math.random() * 0.8);
+    }
+
+    // MAIN WINGS
+    for (let i = 0; i < 1100; i++) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const lx = -10 + Math.random() * 80;
+      const leadEdge = 50 - lx * 0.7;
+      const trailEdge = 8 + (lx + 10) * 0.1;
+      const ly = (trailEdge + Math.random() * (leadEdge - trailEdge)) * side;
+      const tHeat = Math.max(0, Math.min(1, (lx + 10) / 80 * 0.5 + 0.3));
+      const edgeHeat = Math.abs(ly) > leadEdge * 0.8 ? 0.15 : 0;
+      addParticle(lx, ly, Math.min(1, tHeat + edgeHeat), 0.5 + Math.random());
+    }
+
+    // TAIL FINS
+    for (let i = 0; i < 400; i++) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const lx = -45 + Math.random() * 30;
+      const finH = 15 + (lx + 45) / 30 * 10;
+      const ly = (8 + Math.random() * finH) * side;
+      addParticle(lx, ly, Math.max(0, (lx + 45) / 40 * 0.2), 0.5 + Math.random() * 0.6);
+    }
+
+    // HORIZONTAL STABILIZERS
+    for (let i = 0; i < 300; i++) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const lx = -45 + Math.random() * 25;
+      const span = 20 + (lx + 45) / 25 * 8;
+      const ly = (6 + Math.random() * span) * side;
+      addParticle(lx, ly, 0.05 + Math.random() * 0.1, 0.4 + Math.random() * 0.6);
+    }
+
+    // ENGINE INTAKES
+    for (let i = 0; i < 200; i++) {
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const lx = 10 + Math.random() * 30;
+      const ly = (5 + Math.random() * 6) * side;
+      addParticle(lx, ly, 0.35 + Math.random() * 0.15, 0.7 + Math.random() * 0.5);
+    }
+
+    // EXHAUST PLUMES
+    for (let i = 0; i < 800; i++) {
+      const side = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 4);
+      const dist = Math.random() * 80;
+      const lx = -54 - dist;
+      const spread = 3 + dist * 0.25 + Math.random() * dist * 0.15;
+      const ly = side + (Math.random() - 0.5) * spread;
+      const tHeat = Math.max(0, 0.7 - dist / 80 * 0.7 + (Math.random() - 0.5) * 0.1);
+      const alpha = Math.max(0.1, 1 - dist / 80 * 0.7);
+      const p = {
+        x: 0, y: 0, baseX: 0, baseY: 0,
+        t: tHeat, size: 0.4 + Math.random() * 1.5,
+        pulse: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.5 + Math.random() * 1.2,
+        driftX: -0.3 - Math.random() * 0.5,
+        driftY: (Math.random() - 0.5) * 0.6,
+        isExhaust: true, exhaustAlpha: alpha,
+      };
+      const [px, py] = rot(lx * scale, ly * scale);
+      p.x = px; p.y = py; p.baseX = px; p.baseY = py;
+      this.particles.push(p);
+    }
+
+    // ANNOTATIONS
+    this.annotations = [
+      { label: 'Active AESA / Radar System', anchorLocal: [120, -2], offsetX: 60, offsetY: -70 },
+      { label: '1,000 KM / Combat Radius', anchorLocal: [30, -30], offsetX: 40, offsetY: -90 },
+      { label: '65,000 FT / Operational Ceiling', anchorLocal: [10, -15], offsetX: -30, offsetY: -110 },
+      { label: 'MACH 2.4 / Maximum Velocity', anchorLocal: [-40, 3], offsetX: -50, offsetY: 80 },
+    ];
+
+    this.annotations.forEach(a => {
+      const [ax, ay] = rot(a.anchorLocal[0] * scale, a.anchorLocal[1] * scale);
+      a.anchorX = ax; a.anchorY = ay;
+      a.labelX = ax + a.offsetX; a.labelY = ay + a.offsetY;
+    });
+  }
+}
+
+let jet = new ParticleJet();
+window.addEventListener('resize', () => { jet = new ParticleJet(); });
+
+function drawBackground(time) {
+  ctx.fillStyle = '#060810';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(100,140,200,0.04)';
+  ctx.lineWidth = 0.5;
+  const gs = 40;
+  for (let x = 0; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += gs) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  ctx.strokeStyle = 'rgba(100,140,200,0.015)';
+  ctx.lineWidth = 0.3;
+  const sg = 10;
+  for (let x = 0; x < W; x += sg) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += sg) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Schematics bottom-left
+  ctx.save();
+  ctx.globalAlpha = 0.035;
+  ctx.strokeStyle = 'rgba(140,170,220,1)';
+  ctx.lineWidth = 0.5;
+
+  const ecx = W * 0.12, ecy = H * 0.78, er = 35;
+  ctx.beginPath(); ctx.arc(ecx, ecy, er, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ecx, ecy, er * 0.7, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ecx, ecy, er * 0.3, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(ecx + Math.cos(a) * er * 0.3, ecy + Math.sin(a) * er * 0.3);
+    ctx.lineTo(ecx + Math.cos(a) * er * 0.7, ecy + Math.sin(a + 0.15) * er * 0.7);
+    ctx.stroke();
+  }
+
+  const ax2 = W * 0.22, ay2 = H * 0.85;
+  ctx.beginPath();
+  ctx.moveTo(ax2 - 50, ay2);
+  ctx.bezierCurveTo(ax2 - 30, ay2 - 14, ax2 + 20, ay2 - 12, ax2 + 50, ay2);
+  ctx.bezierCurveTo(ax2 + 20, ay2 + 4, ax2 - 30, ay2 + 5, ax2 - 50, ay2);
+  ctx.stroke();
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(ax2 - 50, ay2);
+  ctx.bezierCurveTo(ax2 - 20, ay2 - 5, ax2 + 20, ay2 - 4, ax2 + 50, ay2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath(); ctx.moveTo(ax2 - 55, ay2 + 15); ctx.lineTo(ax2 + 55, ay2 + 15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax2 - 55, ay2 + 12); ctx.lineTo(ax2 - 55, ay2 + 18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax2 + 55, ay2 + 12); ctx.lineTo(ax2 + 55, ay2 + 18); ctx.stroke();
+
+  const sx = W * 0.08, sy = H * 0.88;
+  ctx.beginPath();
+  ctx.moveTo(sx, sy - 20); ctx.lineTo(sx + 4, sy - 8); ctx.lineTo(sx + 22, sy + 5);
+  ctx.lineTo(sx + 5, sy + 2); ctx.lineTo(sx + 8, sy + 18); ctx.lineTo(sx + 2, sy + 14);
+  ctx.lineTo(sx, sy + 16); ctx.lineTo(sx - 2, sy + 14); ctx.lineTo(sx - 8, sy + 18);
+  ctx.lineTo(sx - 5, sy + 2); ctx.lineTo(sx - 22, sy + 5); ctx.lineTo(sx - 4, sy - 8);
+  ctx.closePath(); ctx.stroke();
+
+  ctx.beginPath(); ctx.arc(W * 0.18, H * 0.75, 20, -0.5, 1.2); ctx.stroke();
+  for (let a = -0.5; a < 1.2; a += 0.34) {
+    ctx.beginPath();
+    ctx.moveTo(W * 0.18 + Math.cos(a) * 18, H * 0.75 + Math.sin(a) * 18);
+    ctx.lineTo(W * 0.18 + Math.cos(a) * 22, H * 0.75 + Math.sin(a) * 22);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAnnotations() {
+  jet.annotations.forEach(a => {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(a.anchorX, a.anchorY); ctx.lineTo(a.labelX, a.labelY); ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(a.anchorX, a.anchorY, 2, 0, Math.PI * 2); ctx.fill();
+
+    ctx.font = '9px "JetBrains Mono", monospace';
+    const tw = ctx.measureText(a.label).width;
+    const pad = 8, bw = tw + pad * 2, bh = 22;
+    const bx = a.labelX - bw / 2, by = a.labelY - bh / 2;
+
+    ctx.fillStyle = 'rgba(6,8,16,0.7)'; ctx.fillRect(bx, by, bw, bh);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 0.5; ctx.strokeRect(bx, by, bw, bh);
+
+    const cs = 5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bx, by + cs); ctx.lineTo(bx, by); ctx.lineTo(bx + cs, by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx + bw - cs, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cs); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx, by + bh - cs); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cs, by + bh); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx + bw - cs, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cs); ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(a.label, a.labelX, a.labelY);
+    ctx.restore();
+  });
+}
+
+function drawParticles(time) {
+  jet.particles.forEach(p => {
+    const t = time * 0.001;
+    const pulseVal = Math.sin(t * p.pulseSpeed + p.pulse) * 0.3;
+    const dx = Math.sin(t * 0.5 + p.pulse) * p.driftX * 2;
+    const dy = Math.cos(t * 0.4 + p.pulse * 1.3) * p.driftY * 2;
+    const x = p.baseX + dx, y = p.baseY + dy;
+    const size = Math.max(0.3, p.size + pulseVal * 0.5);
+    let alpha = 0.5 + pulseVal * 0.3;
+    if (p.isExhaust) alpha *= p.exhaustAlpha;
+    ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fillStyle = thermalColor(p.t, alpha); ctx.fill();
+    if (p.t > 0.5 && size > 0.8) {
+      ctx.beginPath(); ctx.arc(x, y, size * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = thermalColor(p.t, (p.t - 0.5) * 0.15 * (0.5 + pulseVal * 0.3)); ctx.fill();
+    }
+  });
+}
+
+function animate(time) {
+  drawBackground(time);
+  drawParticles(time);
+  drawAnnotations();
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
